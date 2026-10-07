@@ -22,6 +22,7 @@
         <allure.version>2.35.5</allure.version>
         <opencsv.version>5.12.0</opencsv.version>
         <poi.version>5.5.1</poi.version>
+        <commons-csv.version>1.14.1</commons-csv.version>
 
         <!-- Plugin versions -->
         <surefire.plugin.version>3.5.3</surefire.plugin.version>
@@ -90,6 +91,12 @@
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
             <version>${poi.version}</version>
+        </dependency>
+        <!-- Source: https://mvnrepository.com/artifact/org.apache.commons/commons-csv -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>${commons-csv.version}</version>
         </dependency>
     </dependencies>
 
