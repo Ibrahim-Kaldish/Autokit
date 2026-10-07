@@ -1,4 +1,6 @@
 package pages.loginTest;
 
-public class ValidLogin {
+import pages.baseTest.BaseTest;
+
+public class ValidLogin extends BaseTest {
 }
