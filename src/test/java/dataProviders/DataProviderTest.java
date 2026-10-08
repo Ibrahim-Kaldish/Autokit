@@ -1,17 +1,29 @@
 package dataProviders;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.DataProvider;
 
 public class DataProviderTest {
+    private static final Logger log = LoggerFactory.getLogger(DataProviderTest.class);
 
     @DataProvider (name = "validCredentails")
     public Object[][] validCredentails() {
-        return new Object[][]{};
+        log.info("📋 Supplying validCredentails data");
+        Object[][] data = new Object[][]{};
+        if (data.length == 0) {
+            log.warn("⚠️ validCredentails returned no rows");
+        }
+        return data;
     }
 
     @DataProvider (name = "invalidCredentails")
     public Object[][] invalidCredentails() {
-        return new Object[][]{};
+        log.info("📋 Supplying invalidCredentails data");
+        Object[][] data = new Object[][]{};
+        if (data.length == 0) {
+            log.warn("⚠️ invalidCredentails returned no rows");
+        }
+        return data;
     }
-
 }

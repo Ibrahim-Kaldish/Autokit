@@ -19,58 +19,86 @@ public class OpenCSVFileManager {
 
     public OpenCSVFileManager(String csvFilePath) {
         this.csvFilePath = csvFilePath;
-        log.debug("📂 Reading CSV file: {}", csvFilePath);
+        log.info("📂 Reading CSV file: {}", csvFilePath);
 
         try (CSVReader reader = new CSVReader(new FileReader(csvFilePath))) {
             List<String[]> all = reader.readAll();
             if (all.isEmpty()) {
-                throw new RuntimeException("CSV file is empty: " + csvFilePath);
+                log.error("❌ CSV file is empty: {}", csvFilePath);
+                throw new IllegalStateException("CSV file is empty: " + csvFilePath);
             }
             columns.addAll(Arrays.asList(all.get(0)));
             rows.addAll(all.subList(1, all.size()));
             log.info("✅ CSV loaded: {} columns, {} rows from [{}]", columns.size(), rows.size(), csvFilePath);
         } catch (IOException | CsvException e) {
-            log.error("❌ Failed to read CSV file: {}", csvFilePath, e);
-            throw new RuntimeException("Cannot read CSV file: " + csvFilePath, e);
+            log.error("❌ Could not read CSV file [{}]", csvFilePath, e);
+            throw new IllegalStateException("Could not read CSV file: " + csvFilePath, e);
         }
     }
 
-    /** All data rows (header excluded). */
+    /**
+     * Returns a copy of all data rows, header excluded.
+     */
     public List<String[]> getRows() {
-        return rows;
+        return new ArrayList<>(rows);
     }
 
-    /** Column names from the header row. */
+    /**
+     * Returns the column names from the header row.
+     */
     public List<String> getColumns() {
         return new ArrayList<>(columns);
     }
 
-    /** Column name -> list of that column's values, in file order. */
+    /**
+     * Maps each column name to its values, in file order.
+     */
     public Map<String, List<String>> getColumnsWithData() {
         Map<String, List<String>> map = new LinkedHashMap<>();
         for (int colIdx = 0; colIdx < columns.size(); colIdx++) {
-            List<String> data = new ArrayList<>();
-            for (String[] row : rows) {
-                if (colIdx < row.length) data.add(row[colIdx]);
-            }
-            map.put(columns.get(colIdx), data);
+            map.put(columns.get(colIdx), getSpecificColumnData(colIdx));
         }
         return map;
     }
 
+    /**
+     * Returns the first column name, or null if the file has no columns.
+     */
     public String getFirstColumn() {
+        if (columns.isEmpty()) {
+            log.warn("⚠️ No columns found in [{}]", csvFilePath);
+            return null;
+        }
         return columns.get(0);
     }
 
+    /**
+     * Returns the last column name, or null if the file has no columns.
+     */
     public String getLastColumn() {
+        if (columns.isEmpty()) {
+            log.warn("⚠️ No columns found in [{}]", csvFilePath);
+            return null;
+        }
         return columns.get(columns.size() - 1);
     }
 
-    /** columnIndex is 0-based. */
+    /**
+     * @param columnIndex the 0-based index of the column
+     * @return the column name, or null if the index is out of range
+     */
     public String getSpecificColumnName(int columnIndex) {
+        if (columnIndex < 0 || columnIndex >= columns.size()) {
+            log.warn("⚠️ Column index {} is out of range (0-{})", columnIndex, columns.size() - 1);
+            return null;
+        }
         return columns.get(columnIndex);
     }
 
+    /**
+     * @param columnName the name of the column
+     * @return the column values, or an empty list if the column does not exist
+     */
     public List<String> getSpecificColumnData(String columnName) {
         int idx = columns.indexOf(columnName);
         if (idx == -1) {
@@ -80,21 +108,48 @@ public class OpenCSVFileManager {
         return getSpecificColumnData(idx);
     }
 
-    /** columnIndex is 0-based. */
+    /**
+     * @param columnIndex the 0-based index of the column
+     * @return the column values, or an empty list if the index is out of range
+     */
     public List<String> getSpecificColumnData(int columnIndex) {
+        if (columnIndex < 0 || columnIndex >= columns.size()) {
+            log.warn("⚠️ Column index {} is out of range", columnIndex);
+            return Collections.emptyList();
+        }
         List<String> data = new ArrayList<>();
         for (String[] row : rows) {
-            if (columnIndex < row.length) data.add(row[columnIndex]);
+            if (columnIndex < row.length) {
+                data.add(row[columnIndex]);
+            }
         }
         log.debug("📋 Column '{}' has {} values", columns.get(columnIndex), data.size());
         return data;
     }
 
-    /** rowNum and columnIndex are 0-based (row 0 = first data row). */
+    /**
+     * @param rowNum the 0-based index of the data row (0 is the first row after the header)
+     * @param columnIndex the 0-based index of the column
+     * @return the cell value, or null if the row or column is out of range
+     */
     public String getCellData(int rowNum, int columnIndex) {
-        return rows.get(rowNum)[columnIndex];
+        if (rowNum < 0 || rowNum >= rows.size()) {
+            log.warn("⚠️ Row {} is out of range (0-{})", rowNum, rows.size() - 1);
+            return null;
+        }
+        String[] row = rows.get(rowNum);
+        if (columnIndex < 0 || columnIndex >= row.length) {
+            log.warn("⚠️ Column index {} is out of range for row {}", columnIndex, rowNum);
+            return null;
+        }
+        return row[columnIndex];
     }
 
+    /**
+     * @param rowNum the 0-based index of the data row
+     * @param columnName the name of the column
+     * @return the cell value, or null if the row or column does not exist
+     */
     public String getCellData(int rowNum, String columnName) {
         int idx = columns.indexOf(columnName);
         if (idx == -1) {
@@ -112,12 +167,12 @@ public class OpenCSVFileManager {
         return getSpecificColumnData(columnIndex).size();
     }
 
-    public String formatAll(List<String> columns, List<List<String>> ans){
+    public String formatAll(List<String> columns, List<List<String>> ans) {
         int colWidth = "Column".length();
         int wordsWidth = "Word(s)".length();
         List<String> wordsText = new ArrayList<>();
 
-        for (int i = 0; i < columns.size(); i++){
+        for (int i = 0; i < columns.size(); i++) {
             List<String> subAns = ans.get(i);
             List<String> words = new ArrayList<>(subAns.subList(0, subAns.size() - 1));
             Collections.sort(words);
@@ -134,7 +189,7 @@ public class OpenCSVFileManager {
         sb.append(line).append("\n");
         sb.append(String.format(row, "Column", "Count", "Word(s)"));
         sb.append(line).append("\n");
-        for (int i = 0; i < columns.size(); i++){
+        for (int i = 0; i < columns.size(); i++) {
             List<String> subAns = ans.get(i);
             sb.append(String.format(row, columns.get(i), subAns.get(subAns.size() - 1), wordsText.get(i)));
         }
@@ -142,39 +197,40 @@ public class OpenCSVFileManager {
         return sb.toString();
     }
 
-    public List<String> findMaxFrequentWordsInCloumn(List<String> values){
-        List<String> subAns = new ArrayList<>();
-        HashMap<String,Integer> map = new HashMap<>();
-        int mx = 1 ;
-        for (String line: values){
-            for (String word : List.of(line.split(" "))){
-                word = word.toLowerCase();
-                if (map.containsKey(word)){
-                    map.put(word, map.get(word) + 1) ;
-                    mx = Math.max(mx, map.get(word));
+    /**
+     * Finds the most frequent words across the given values, ignoring case.
+     * The last element of the result is the highest count, as a string.
+     */
+    public List<String> findMaxFrequentWordsInCloumn(List<String> values) {
+        Map<String, Integer> counts = new HashMap<>();
+        int max = 0;
+        for (String line : values) {
+            for (String word : line.toLowerCase().trim().split("\\s+")) {
+                if (word.isEmpty()) {
+                    continue;
                 }
-                else map.put(word, 1);
+                max = Math.max(max, counts.merge(word, 1, Integer::sum));
             }
         }
-        for (Map.Entry<String, Integer> entry : map.entrySet()){
-            if (entry.getValue() == mx){
+
+        List<String> subAns = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : counts.entrySet()) {
+            if (entry.getValue() == max) {
                 subAns.add(entry.getKey());
             }
         }
-        subAns.add(String.valueOf(mx));
+        subAns.add(String.valueOf(max));
+        log.debug("🔤 Max frequency {} for {} candidate word(s)", max, subAns.size() - 1);
         return subAns;
     }
 
-    public List<List<String>> maxFrequentWordLogic(){
+    public List<List<String>> maxFrequentWordLogic() {
         List<List<String>> ans = new ArrayList<>();
-        List<String> cloNames = getColumns();
-        for (String cloName : cloNames){
-            List<String> subAns = findMaxFrequentWordsInCloumn(getSpecificColumnData(cloName));
-            ans.add(subAns);
+        List<String> colNames = getColumns();
+        for (String colName : colNames) {
+            ans.add(findMaxFrequentWordsInCloumn(getSpecificColumnData(colName)));
         }
-        log.info(formatAll(cloNames, ans));
+        log.info(formatAll(colNames, ans));
         return ans;
     }
-
-
 }
