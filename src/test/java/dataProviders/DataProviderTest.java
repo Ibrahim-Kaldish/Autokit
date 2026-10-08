@@ -1,11 +1,13 @@
 package dataProviders;
 
-import org.slf4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testng.annotations.DataProvider;
+import pages.BasePage;
 
 public class DataProviderTest {
-    private static final Logger log = LoggerFactory.getLogger(DataProviderTest.class);
+    private static final Logger log = LogManager.getLogger(DataProviderTest.class);
 
     @DataProvider (name = "validCredentails")
     public Object[][] validCredentails() {

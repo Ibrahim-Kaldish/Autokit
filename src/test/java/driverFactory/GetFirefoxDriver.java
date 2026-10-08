@@ -1,14 +1,15 @@
 package driverFactory;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebDriverException;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.openqa.selenium.firefox.FirefoxOptions;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class GetFirefoxDriver implements DriverFactory {
-    private static final Logger log = LoggerFactory.getLogger(GetFirefoxDriver.class);
+    private static final Logger log = LogManager.getLogger(GetFirefoxDriver.class);
 
     private static WebDriver driver = null;
 
